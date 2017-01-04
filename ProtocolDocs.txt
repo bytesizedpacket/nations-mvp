@@ -1,0 +1,58 @@
+-- PROTOCOL DOCUMENTATION --
+Reference for the usage of all client-server communication functions.
+
+- loginAttempt
+src: client
+dest: single client
+args: playerobject
+desc: The client sends a newly created player object to the server, & the server checks the received player object for valid info (name, etc). Will respond with either 'loginDenied' or 'loginAccepted' depending on the received info.
+
+- loginDenied
+src: server
+dest: single client
+args: string
+desc: The server responds with a string, telling the client how the player object is invalid. The client displays this to the user.
+
+- loginAccepted
+src: server
+dest: single client
+args: playerobject
+desc: The server responds with an updated player object, containing the player's position and other relevant info.
+
+- updatePlayer
+src: client
+dest: server
+args: playerobject
+desc: The client sends the player object to the server, indicating that an update happened. The server then broadcasts this to other clients.
+
+- updateAllPlayers
+src: server
+dest: all clients
+args: [playerobject array]
+desc: Broadcasts an updated array of players for the client to display.
+TODO: Move player array management to serverside
+TODO: Determine which players to send based on distance from target player.
+
+- forceUpdatePlayer
+src: server
+dest: single client
+args: playerobject
+desc: The server forcibly resets a client's player, typically after suspected cheating or similarly improbable circumstances.
+
+- chatMessage
+src: client
+dest: server
+args: string
+desc: Sends a chat message to the server.
+
+- updateChat
+src: server
+dest: all clients
+args: [string array]
+desc: Sends the current chat array to all connected clients.
+
+- boop
+src: client, server
+dest: server, single client
+args: string
+desc: A client sends a 'boop' to a provided player ID, whom the server is tasked with forwarding the boop to.
