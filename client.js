@@ -16,8 +16,7 @@ String.prototype.replaceAll = function(search, replacement) {
     return target.split(search).join(replacement);
 };
 
-// Returns a value needed to change something X units per second,
-// independently of frame rate.
+// Returns a value needed to change something X units per second, independently of frame rate.
 function unitsPerSecond(event, px){
     return event.delta/1000*px;
 }
@@ -25,28 +24,47 @@ function unitsPerSecond(event, px){
 // -- }
 
 // Init global variables
-// TODO: global variable init
 // Undefined at game start
 var stage;
-// everything else
+// game state booleans
 var loggedIn = false;
 var gameActive = false;
+// HTML elements
+var loginField = document.getElementById("loginField");
+var usernameInput = document.getElementById("usernameInput");
+var deniedReason = document.getElementById("deniedReason");
+// Local player
+var localPlayerObj = {name: "", id: "", x: 0, y: 0};
 
-// Login response events
-socket.on('loginAccepted', function(playerObj){
-    loggedIn = true;
-    gameInit();
-    // TODO: loginAccepted
-});
-
-socket.on('loginDenied', function(reason){
-    // TODO: loginDenied
-});
+// Listen for 'enter' key to login
+addEventListener("keydown", handleInputDown);
+function handleInputDown(event){
+    switch(event.keyCode){
+        case 13:
+            if(!gameActive && document.activeElement == usernameInput){
+                attemptLogin();
+            }
+            break;
+    }
+}
 
 // Attempts to log in with the given information
 function attemptLogin(){
-    // TODO: Login function
+    socket.emit('loginAttempt', usernameInput.value);
 }
+
+// Successful login, set player object & start init
+socket.on('loginAccepted', function(playerObj){
+    loggedIn = true;
+    localPlayerObj = playerObj;
+    gameInit();
+});
+
+// Unsuccessful login, displays reason from server
+socket.on('loginDenied', function(reason){
+    loginField.value = "";
+    deniedReason = reason;
+});
 
 // Initialize game before loop starts.
 function gameInit(){

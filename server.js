@@ -31,15 +31,14 @@ app.get('/boop.png', function(req, res){
     res.sendFile(__dirname + '/boop.png');
 });
 
+// Player has loaded the webpage
 io.on('connection', function(socket){
-    //var sid = socket.id;
     var playerIndex;
     var thisPlayer;
     var loggedIn = false;
-    //console.log(sid);
-    // client has connected
     socket.join(socket.id);
 
+    // TODO: fix the array element removal here
     socket.on('disconnect', function(){
         if(loggedIn) {
             console.log(thisPlayer.name + " disconnected.");
@@ -53,9 +52,11 @@ io.on('connection', function(socket){
         }
     });
 
-    socket.on('loginAttempt', function(playerInfo){
-        var fixedName = playerInfo.name.replaceAll(" ","");
-        if(fixedName != "" && fixedName.length <= 8 && fixedName != "Invalid!" && fixedName != "Taken!") {
+    // TODO: rewrite this
+    socket.on('loginAttempt', function(playerName){
+        var playerInfo = {name: "", id: "", x: 0, y: 0};
+        var fixedName = playerName.replaceAll(" ","");
+        if(fixedName != "" && fixedName.length <= 8 && fixedName != "Invalid!" && fixedName != "Taken!") { // TODO: remove reasons
             var takenCheck = false;
             for(var names in players){
                 if(players[names].name == fixedName){
@@ -82,6 +83,7 @@ io.on('connection', function(socket){
         }
     });
 
+    // TODO: clean this
     socket.on('updatePlayer', function(playerInfo){
         if(loggedIn) {
             if (playerInfo.name != "") {
@@ -126,6 +128,6 @@ io.on('connection', function(socket){
 setInterval(function(){
     //console.log("tick");
     io.emit('updateAllPlayers', players); // TODO: Move player array management to serverside
-    io.emit('updateChat', chatqueue);
+    io.emit('updateChat', chatqueue); // TODO: check if chat is actually different before refreshing
     chatqueue = [];
 }, 33);
