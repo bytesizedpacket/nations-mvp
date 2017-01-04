@@ -269,16 +269,6 @@ function unitsPerSecond(event, px){
     return event.delta/1000*px;
 }
 
-// called when another player joins the server
-function playerConnect(){
-
-}
-
-// called when another player leaves the server
-function playerDisconnect(){
-
-}
-
 // Called when the player clicks another player
 function sendBoop(event){
     var id;

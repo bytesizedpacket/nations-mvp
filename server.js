@@ -75,7 +75,7 @@ io.on('connection', function(socket){
                 thisPlayer = playerInfo;
                 io.in(socket.id.toString()).emit('loginAccepted', playerInfo);
                 console.log(players);
-                io.in(socket.id.toString()).emit('updatePlayer', playerInfo);
+                //io.in(socket.id.toString()).emit('updatePlayer', playerInfo);
             }
         }else{
             io.in(socket.id.toString()).emit('loginDenied', "Invalid!");

@@ -29,7 +29,7 @@ desc: The client sends the player object to the server, indicating that an updat
 src: server
 dest: all clients
 args: [playerobject array]
-desc: Broadcasts an updated array of players for the client to display.
+desc: Broadcasts an updated array of players for the client to display. Does not include the target client.
 TODO: Move player array management to serverside
 TODO: Determine which players to send based on distance from target player.
 
