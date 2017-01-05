@@ -19,14 +19,16 @@ String.prototype.replaceAll = function (search, replacement) {
     return target.split(search).join(replacement);
 };
 
-// TODO: regexp to return a string with only 0-9 A-Z a-z
+// Removes all special characters from the given string.
+String.prototype.removeSpecialChars = function (string) {
+    return string.replace(/[^\w\s]/gi, '');
+}
 
 // -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >>
 
 // Start server
-server.listen(serverPort, function () {
-    console.log("Listening on *:6969");
-});
+server.listen(serverPort);
+console.log("Server running on port " + serverPort);
 
 // HTTP file serving
 // -- << -- << -- << -- << -- << -- << -- << -- << -- << -- << -- << -- <<
@@ -77,7 +79,7 @@ io.on('connection', function (socket) {
     // Arg: player object
     socket.on('loginAttempt', function (playerInfo) {
         console.log("Login attempt with name '" + playerInfo.name + "'");
-        var fixedName = playerName.replaceAll(" ", ""); // TODO: regexp for A-Z a-z 0-9
+        var fixedName = playerInfo.name.replaceAll(" ", ""); // TODO: regexp for A-Z a-z 0-9
         if (fixedName != "" && fixedName.length <= 8 && fixedName != "Invalid!" && fixedName != "Taken!") { // TODO: remove reasons
             var takenCheck = false;
             for (var names in players) {

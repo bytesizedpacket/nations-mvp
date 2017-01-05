@@ -162,16 +162,16 @@ function tick(event) {
 
         // movement handling
         if (!movementLocked) {
-            if (key[65]) {
+            if (keys[65]) {
                 movementDirection[0] -= 1;
             }
-            if (key[68]) {
+            if (keys[68]) {
                 movementDirection[0] += 1;
             }
-            if (key[83]) {
+            if (keys[83]) {
                 movementDirection[1] -= 1;
             }
-            if (key[87]) {
+            if (keys[87]) {
                 movementDirection[1] += 1;
             }
         }
