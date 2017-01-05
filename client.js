@@ -1,7 +1,7 @@
 // Work in progress replacement client script
 
 // init socket.io
-var socket = io();
+var socket = io.connect(window.location.host);
 
 // start game loop
 createjs.Ticker.on("tick", tick);

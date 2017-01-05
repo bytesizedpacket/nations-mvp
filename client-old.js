@@ -23,7 +23,7 @@ var gameStart = false;
 var movementSpeed = 2;
 
 // init socket
-var socket = io();
+var socket = io.connect(window.location.host);
 
 socket.on('loginAccepted', function () {
     init();

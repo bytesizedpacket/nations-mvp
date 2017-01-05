@@ -2,9 +2,13 @@ var serverPort = 6969;
 
 // init dependencies
 var app = require('express')();
-var server = require('http').Server(app);
+var server = app.listen(serverPort);
 var socket = require('socket.io');
 var io = socket.listen(server);
+
+// Start server
+server.listen(serverPort);
+console.log("Server running on port " + serverPort);
 
 // init global variables
 var chatqueue = [];
@@ -25,10 +29,6 @@ String.prototype.removeSpecialChars = function (string) {
 }
 
 // -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >>
-
-// Start server
-server.listen(serverPort);
-console.log("Server running on port " + serverPort);
 
 // HTTP file serving
 // -- << -- << -- << -- << -- << -- << -- << -- << -- << -- << -- << -- <<
