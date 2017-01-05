@@ -12,6 +12,7 @@ var otherPlayerNametagObjects = [];
 var otherPlayersNames = [];
 var namediv = document.getElementById("loginField");
 var namefield = document.getElementById("usernameInput");
+var reasonfield = document.getElementById("deniedReason");
 var boopImg = [];
 var chatbox = document.getElementById('chatbox');
 var chatlog = document.getElementById('chatlog');
@@ -28,7 +29,7 @@ socket.on('loginAccepted', function () {
     init();
 });
 socket.on('loginDenied', function (res) {
-    namefield.value = res;
+    reasonfield.innerHTML = res;
 });
 
 String.prototype.replaceAll = function (search, replacement) {

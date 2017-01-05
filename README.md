@@ -2,6 +2,7 @@
 The minimum viable product for Byte-Sized Packet's game "Nations" (working title).
 
 # How to Run
+
 `npm install`
 
 `node server.js`

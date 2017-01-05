@@ -36,8 +36,16 @@ app.get('/', function (req, res) {
     res.sendFile(__dirname + '/index.html');
 });
 
+app.get('/oldclient.html', function (req, res) {
+    res.sendFile(__dirname + '/oldclient.html');
+});
+
 app.get('/client.js', function (req, res) {
     res.sendFile(__dirname + '/client.js');
+});
+
+app.get('/client-old.js', function (req, res) {
+    res.sendFile(__dirname + '/client-old.js');
 });
 
 app.get('/dog.png', function (req, res) {
