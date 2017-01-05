@@ -112,7 +112,7 @@ function gameInit() {
     // Server forcibly updates the player's info
     // Player object
     socket.on('forceUpdatePlayer', function (playerObj) {
-        // TODO: forcibly update player
+        localPlayerObj = playerObj;
     });
 
     // Server provides an array of players for the client to render
@@ -127,7 +127,7 @@ function gameInit() {
     // Server reports new chat messages since last update
     // Array of strings
     socket.on('updateChat', function (msgArray) {
-        // TODO: implement chat (handle queue clientside!)
+        // TODO: implement chat (handle display queue clientside!)
     });
 
     // Performs any necessary game/UI  updates as a result of a player disconnecting. Server will only report nearby players

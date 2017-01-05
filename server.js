@@ -1,4 +1,5 @@
 var serverPort = 6969;
+var tickRate = 30; // ticks per second
 
 // init dependencies
 var app = require('express')();
@@ -11,8 +12,8 @@ server.listen(serverPort);
 console.log("Server running on port " + serverPort);
 
 // init global variables
-var chatqueue = [];
-var players = [];
+var chatqueue = []; // Unlikely to contain more than a few messages, rendering handled clientside
+var players = []; // It is normal for this to have undefined values, please account for this!
 
 // Useful prototypes/helper functions
 // -- << -- << -- << -- << -- << -- << -- << -- << -- << -- << -- << -- <<
@@ -24,8 +25,19 @@ String.prototype.replaceAll = function (search, replacement) {
 };
 
 // Removes all special characters from the given string.
-String.prototype.removeSpecialChars = function (string) {
-    return string.replace(/[^\w\s]/gi, '');
+String.prototype.removeSpecialChars = function () {
+    var target = this;
+    return target.replace(/[^\w\s]/gi, '');
+};
+
+// Add a string to the chat queue
+function sendChatMessage(msg){
+    chatqueue.push(msg);
+}
+
+// send a boop to the given ID from a given sender object
+function sendBoop(id, playerObject){
+    io.in(id).emit('boop', playerObject);
 }
 
 // -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >>
@@ -62,100 +74,153 @@ io.on('connection', function (socket) {
     // TODO: Prevent rapid-fire requests
 
     // player-specific local variables
-    var playerIndex;
-    var thisPlayer;
+    var thisPlayerObject;
     var loggedIn = false;
     socket.join(socket.id);
+    //var recentActions = 0; // incrememnted every time an action is performed, reset every second
 
-    // TODO: fix the array element removal here
+    // Functions for common tasks
+    // -- << -- << -- << -- << -- << -- << -- << -- << -- << -- << -- << -- <<
+
+    // Update all references to a player object with a given player object
+    function updatePlayerObject(playerObject){
+        for(var pl in players){
+            if(players[pl].id == playerObject.id) players[id] = thisPlayerObject;
+            var arrayUpdateSuccess = true; // keep track of whether the player array was successfully updated
+        }
+        // Alert the console of any potential issues with player updates
+        if(!arrayUpdateSuccess){
+            console.log("Player " + playerObject.name + "'s (" + playerObject.id + ") array object failed to update! Problems may arise shortly.");
+        }
+        thisPlayerObject = playerObject;
+    }
+
+    // Send a chat message to a specific player
+    function sendChatMessageToPlayer(msg){
+        io.in(socket.id.toString()).emit('updateChat', [msg]);
+    }
+
+    // Force a player to update their local player object
+    function forceUpdatePlayer(playerObject){
+        io.in(socket.id.toString()).emit('forceUpdatePlayer', playerObject);
+    }
+
+    // Send any request to this specific player
+    function sendRequestToPlayer(requestString, obj){
+        io.in(socket.id.toString()).emit(requestString, obj);
+    }
+
+    // Calculates the distance between two [x, y] coordinate arrays.
+    // TODO: distance calc
+    function calculateDistance(){
+
+    }
+
+    // -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >>
+
     // Player has disconnected
     socket.on('disconnect', function () {
+        //recentActions++;
         if (loggedIn) {
-            console.log(thisPlayer.name + " disconnected.");
-            socket.emit('playerDisconnect', thisPlayer);
-            for (var pl in players) {
-                if (thisPlayer.id == players[pl].id) {
-                    players.splice(players.indexOf(players[pl]), 1);
-                }
-            }
+            console.log(thisPlayerObject.name + " disconnected.");
+            socket.emit('playerDisconnect', thisPlayerObject);
+            delete players[thisPlayerObject]; // set array element to undefined
             console.log(players);
         }
     });
 
-    // TODO: rewrite this entire function
     // Received attempt to login from client
     // Arg: player object
     socket.on('loginAttempt', function (playerInfo) {
+        //recentActions++;
         console.log("Login attempt with name '" + playerInfo.name + "'");
-        var fixedName = playerInfo.name.replaceAll(" ", ""); // TODO: regexp for A-Z a-z 0-9
-        if (fixedName != "" && fixedName.length <= 8 && fixedName != "Invalid!" && fixedName != "Taken!") { // TODO: remove reasons
+        var fixedName = playerInfo.name.removeSpecialChars(); // remove invalid characters from the name
+        if (fixedName != "" && fixedName.length <= 8) {
+
+            // check if name is already taken
             var takenCheck = false;
-            for (var names in players) {
-                if (players[names].name == fixedName) {
+            for (var pl in players) {
+                if (players[pl].name == fixedName) {
                     takenCheck = true;
                 }
             }
 
             if (takenCheck) {
-                io.in(socket.id.toString()).emit('loginDenied', "Taken!");
+                io.in(socket.id.toString()).emit('loginDenied', "Taken!"); // name was taken
             } else {
+                // prepare local variables
                 loggedIn = true;
                 playerInfo.name = fixedName;
-                console.log(socket.id.toString());
+                console.log(socket.id.toString() + ", " + fixedName + " has connected.");
                 playerInfo.id = socket.id;
-                playerIndex = players.length;
                 players.push(playerInfo);
-                thisPlayer = playerInfo;
-                io.in(socket.id.toString()).emit('loginAccepted', playerInfo);
+                thisPlayerObject = playerInfo;
+
+                // accept login
+                sendRequestToPlayer('loginAccepted', playerInfo);
                 console.log(players);
                 //io.in(socket.id.toString()).emit('updatePlayer', playerInfo);
             }
         } else {
-            io.in(socket.id.toString()).emit('loginDenied', "Invalid!");
+            if(fixedName == ""){
+                sendRequestToPlayer('loginDenied', "Enter a name!");
+            }else {
+                sendRequestToPlayer('loginDenied', "Too long!");
+            }
         }
     });
 
-    // TODO: rewrite this, add anti-movement-hack code
     // Received updated player from client
     // Arg: player object
-    socket.on('updatePlayer', function (playerInfo) {
+    socket.on('updatePlayer', function (playerObject) {
+        //recentActions++;
+        var movementInvalid = false;
         if (loggedIn) {
-            if (playerInfo.name != "") {
-                if (playerInfo.name != thisPlayer.name) playerInfo.name = thisPlayer.name;
-                players[playerIndex] = playerInfo;
-                thisPlayer = playerInfo;
-            } else {
-                console.log("No name received???");
+            // check for invalid movement since last update
+            if(Math.abs(playerObject.x - thisPlayerObject.x) > 1){
+                playerObject.x = thisPlayerObject.x;
+                movementInvalid = true;
             }
-        } else {
-            thisPlayer = undefined;
+            if(Math.abs(playerObject.y - thisPlayerObject.y) > 1){
+                playerObject.y = thisPlayerObject.y;
+                movementInvalid = true;
+            }
+            if(movementInvalid) sendChatMessageToPlayer("Invalid movement!");
+            forceUpdatePlayer(playerObject);
+            updatePlayerObject(playerObject);
         }
     });
 
     // Player submitted a chat message
     // Arg: string
-    // TODO: move chat queue control to client
     socket.on('chatMessage', function (msg) {
+        //recentActions++;
         if (loggedIn) {
             if (msg.replaceAll(" ", "") == "") msg = "I am an immature child begging for attention.";
-            chatqueue.push("<b>" + thisPlayer.name + "</b>: " + msg.substr(0, 100).replaceAll("<", "&lt;").replaceAll(">", "&gt;") + "<br/>"); // TODO: move chat array management to serverside
+            var formattedMsg = "<b>" + thisPlayerObject.name + "</b>: " + msg.substr(0, 100).replaceAll("<", "&lt;").replaceAll(">", "&gt;") + "<br/>";
+            sendChatMessage(formattedMsg);
         }
     });
 
     // Player is sending a boop
     // Arg: string
     socket.on('boop', function (id) {
+        //recentActions++;
         if (loggedIn) {
             var target = undefined;
 
+            // check if target ID exists
+            // TODO: distance comparison
             for (var x in players) {
                 if (players[x].id == id) target = players[x];
             }
+
             if (target) {
-                io.in(id.toString()).emit('boop', thisPlayer);
+                sendBoop(id, thisPlayerObject);
             } else {
-                console.log("Target ID not found, aborting");
+                console.log(thisPlayerObject.name + " tried to boop an invalid target.");
             }
+
         }
     })
 });
@@ -163,8 +228,9 @@ io.on('connection', function (socket) {
 // server loop
 // currently ~30 ticks/sec
 setInterval(function () {
-    //console.log("tick");
-    io.emit('updateAllPlayers', players); // TODO: Move player array management to serverside
-    io.emit('updateChat', chatqueue); // TODO: check if chat is actually different before refreshing
-    chatqueue = [];
-}, 33);
+    io.emit('updateAllPlayers', players); // TODO: Update players on a per-client basis, filter out irrelevant players
+    if(chatQueue != []) {
+        io.emit('updateChat', chatqueue);
+        chatqueue = [];
+    }
+}, Math.round(1000 / tickRate));
