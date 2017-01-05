@@ -77,7 +77,7 @@ io.on('connection', function (socket) {
     // Arg: player object
     socket.on('loginAttempt', function (playerInfo) {
         console.log("Login attempt with name '" + playerInfo.name + "'");
-        var fixedName = playerName.replaceAll(" ", "");
+        var fixedName = playerName.replaceAll(" ", ""); // TODO: regexp for A-Z a-z 0-9
         if (fixedName != "" && fixedName.length <= 8 && fixedName != "Invalid!" && fixedName != "Taken!") { // TODO: remove reasons
             var takenCheck = false;
             for (var names in players) {

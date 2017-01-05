@@ -42,7 +42,7 @@ function unitsPerSecond(event, units) {
 }
 
 // Updates the displayed chatlog with current contents of chatQueue array
-function updateChatDisplay(){
+function updateChatDisplay() {
     // TODO: update chat display func
 }
 
@@ -96,6 +96,7 @@ function gameInit() {
     // TODO: finish game/var init
 
     // Create startup UI
+    // TODO: DPI-Aware, touch friendly
     stage = new createjs.Stage("game");
     chatbox.style.visibility = "visible";
     loginField.innerHTML = "";
@@ -125,7 +126,7 @@ function gameInit() {
 
     // Server reports new chat messages since last update
     // Array of strings
-    socket.on('updateChat', function(msgArray){
+    socket.on('updateChat', function (msgArray) {
         // TODO: implement chat (handle queue clientside!)
     });
 
@@ -160,7 +161,7 @@ function tick(event) {
         var movementDirection = [0, 0];
 
         // movement handling
-        if(!movementLocked) {
+        if (!movementLocked) {
             if (key[65]) {
                 movementDirection[0] -= 1;
             }
