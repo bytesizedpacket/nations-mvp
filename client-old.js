@@ -1,5 +1,7 @@
 // This is the OLD client. The new script can be found at client.js
 
+var clientVersion = "0.0.1"; // makes sure client and server are compatible versions
+
 // init vars
 var stage, localPlayer, localPlayerNameObject, updateIndex;
 var moveDirectionH = [0, 0];

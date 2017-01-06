@@ -1,5 +1,7 @@
 // Work in progress replacement client script
 
+var clientVersion = "0.0.2"; // makes sure client and server are compatible versions
+
 // init socket.io
 var socket = io.connect(window.location.host);
 
@@ -23,7 +25,7 @@ var chatlog = document.getElementById('chatlog'); // Div which contains chatlog
 // UI
 var chatQueue = []; // queue of messages to display in chat, capped at 10 length
 // Local player
-var localPlayerObj = {name: "", id: "", x: 0, y: 0}; // blank player object
+var localPlayerObj = {name: "", id: "", x: 0, y: 0, version: clientVersion}; // blank player object
 // Input
 var keys = []; // for input handling
 
@@ -120,7 +122,7 @@ function gameInit() {
     // Array of player objects
     socket.on('updateAllPlayers', function (playerArray) {
         // TODO: Update all players
-        // DESTROY ALL CURRENT OBJECTS AND START AGAIN FROM SCRATCG
+        // DESTROY ALL CURRENT OBJECTS AND START AGAIN FROM SCRATCH
         // FUCK EFFICIENCY
     });
 

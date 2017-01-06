@@ -1,3 +1,5 @@
+var serverVersion = "0.0.2"; // makes sure client and server are compatible versions
+
 var serverPort = 6969;
 var tickRate = 30; // ticks per second
 
@@ -148,18 +150,23 @@ io.on('connection', function (socket) {
             if (takenCheck) {
                 io.in(socket.id.toString()).emit('loginDenied', "Taken!"); // name was taken
             } else {
-                // prepare local variables
-                loggedIn = true;
-                playerInfo.name = fixedName;
-                console.log(socket.id.toString() + ", " + fixedName + " has connected.");
-                playerInfo.id = socket.id;
-                players.push(playerInfo);
-                thisPlayerObject = playerInfo;
 
-                // accept login
-                sendRequestToPlayer('loginAccepted', playerInfo);
-                console.log(players);
-                //io.in(socket.id.toString()).emit('updatePlayer', playerInfo);
+                if(playerInfo.version != serverVersion){
+                    io.in(socket.id.toString()).emit('loginDenied', "Client outdated!"); // name was taken
+                }else {
+                    // prepare local variables
+                    loggedIn = true;
+                    playerInfo.name = fixedName;
+                    console.log(socket.id.toString() + ", " + fixedName + " has connected.");
+                    playerInfo.id = socket.id;
+                    players.push(playerInfo);
+                    thisPlayerObject = playerInfo;
+
+                    // accept login
+                    sendRequestToPlayer('loginAccepted', playerInfo);
+                    console.log(players);
+                    //io.in(socket.id.toString()).emit('updatePlayer', playerInfo);
+                }
             }
         } else {
             if(fixedName == ""){
