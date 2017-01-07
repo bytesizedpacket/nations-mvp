@@ -19,6 +19,7 @@ console.log("Server version " + serverVersion + " running on port " + serverPort
 // init global variables
 var chatQueue = []; // Unlikely to contain more than a few messages, rendering handled clientside
 var players = []; // It is normal for this to have undefined values, please account for this!
+var mapSize = [800, 450]; // allowed movement range of the game world
 
 // Useful prototypes/helper functions
 // -- << -- << -- << -- << -- << -- << -- << -- << -- << -- << -- << -- <<
@@ -36,13 +37,23 @@ String.prototype.removeSpecialChars = function () {
 };
 
 // Add a string to the chat queue
-function sendChatMessage(msg){
-    chatqueue.push(msg);
+function addToChatQueue(msg){
+    chatQueue.push(msg);
 }
 
 // send a boop to the given ID from a given sender object
 function sendBoop(id, playerObject){
     io.in(id).emit('boop', playerObject);
+}
+
+// Send a chat message to a specific player
+function sendChatMessageToPlayer(playerObj, msg){
+    io.in(playerObj.id.toString()).emit('updateChat', [msg]);
+}
+
+// Send any request to this specific player
+function sendRequestToPlayer(playerObj, requestString, obj){
+    io.in(playerObj.id.toString()).emit(requestString, obj);
 }
 
 // -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >>
@@ -51,6 +62,10 @@ function sendBoop(id, playerObject){
 // -- << -- << -- << -- << -- << -- << -- << -- << -- << -- << -- << -- <<
 app.get('/', function (req, res) {
     res.sendFile(__dirname + '/index.html');
+});
+
+app.get('/favicon.ico', function (req, res) {
+    res.sendFile(__dirname + '/favicon.ico');
 });
 
 app.get('/oldclient.html', function (req, res) {
@@ -112,19 +127,9 @@ io.on('connection', function (socket) {
         thisPlayerObject = playerObject;
     }
 
-    // Send a chat message to a specific player
-    function sendChatMessageToPlayer(msg){
-        io.in(socket.id.toString()).emit('updateChat', [msg]);
-    }
-
     // Force a player to update their local player object
     function forceUpdatePlayer(playerObject){
         io.in(socket.id.toString()).emit('forceUpdatePlayer', playerObject);
-    }
-
-    // Send any request to this specific player
-    function sendRequestToPlayer(requestString, obj){
-        io.in(socket.id.toString()).emit(requestString, obj);
     }
 
     // Gets the array ID of a given player object
@@ -189,16 +194,16 @@ io.on('connection', function (socket) {
                     thisPlayerObject = playerInfo;
 
                     // accept login
-                    sendRequestToPlayer('loginAccepted', playerInfo);
+                    sendRequestToPlayer(thisPlayerObject, 'loginAccepted', playerInfo);
                     console.log(players);
                     //io.in(socket.id.toString()).emit('updatePlayer', playerInfo);
                 }
             }
         } else {
             if(fixedName == ""){
-                sendRequestToPlayer('loginDenied', "Enter a name!");
+                sendRequestToPlayer(thisPlayerObject, 'loginDenied', "Enter a name!");
             }else {
-                sendRequestToPlayer('loginDenied', "Too long!");
+                sendRequestToPlayer(thisPlayerObject, 'loginDenied', "Too long!");
             }
         }
     });
@@ -210,15 +215,15 @@ io.on('connection', function (socket) {
         var movementInvalid = false;
         if (loggedIn) {
             // check for invalid movement since last update
-            if(Math.abs(playerObject.x - thisPlayerObject.x) > 1){
+            if(Math.abs(playerObject.x - thisPlayerObject.x) > 7 || playerObject.x > mapSize[0] || playerObject.x < 0){
                 playerObject.x = thisPlayerObject.x;
                 movementInvalid = true;
             }
-            if(Math.abs(playerObject.y - thisPlayerObject.y) > 1){
+            if(Math.abs(playerObject.y - thisPlayerObject.y) > 7 || playerObject.y > mapSize[1] || playerObject.y < 0){
                 playerObject.y = thisPlayerObject.y;
                 movementInvalid = true;
             }
-            if(movementInvalid) sendChatMessageToPlayer("Invalid movement!");
+            if(movementInvalid) sendChatMessageToPlayer(thisPlayerObject, "Invalid movement!");
             forceUpdatePlayer(playerObject);
             updatePlayerObject(playerObject);
         }
@@ -228,10 +233,11 @@ io.on('connection', function (socket) {
     // Arg: string
     socket.on('chatMessage', function (msg) {
         //recentActions++;
-        if (loggedIn) {
+        if (loggedIn && msg != "") {
             if (msg.replaceAll(" ", "") == "") msg = "I am an immature child begging for attention.";
-            var formattedMsg = "<b>" + thisPlayerObject.name + "</b>: " + msg.substr(0, 100).replaceAll("<", "&lt;").replaceAll(">", "&gt;") + "<br/>";
-            sendChatMessage(formattedMsg);
+            var formattedMsg = "<b>" + thisPlayerObject.name + "</b>: " + msg.substr(0, 100).replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+            console.log("[CHAT] " + formattedMsg.replaceAll("<b>", "").replaceAll("</b>", ""));
+            addToChatQueue(formattedMsg);
         }
     });
 
@@ -262,8 +268,10 @@ io.on('connection', function (socket) {
 // currently ~30 ticks/sec
 setInterval(function () {
 
-    io.emit('updateAllPlayers', players); // TODO: Update players on a per-client basis, filter out irrelevant players
-    if(chatQueue != []) {
+    // update players for each client
+    io.emit('updateAllPlayers', players);
+
+    if(chatQueue != []) { // make sure chatlog isn't empty
         io.emit('updateChat', chatQueue);
         chatQueue = [];
     }
