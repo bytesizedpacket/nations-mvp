@@ -37,6 +37,8 @@ var chatQueue = []; // queue of messages to display in chat, capped at 10 length
 var boops = [];
 var dog = new Image();
 dog.src = 'dog.png';
+var boopImg = new Image();
+boopImg.src = 'boop.png';
 // Local player
 var localPlayerObj = {name: "", id: "", x: 10, y: 50, version: clientVersion}; // blank player object
 // Other Players
@@ -81,7 +83,7 @@ function addToChatQueue(msg){
 // Sends boop to other player
 function sendBoop(event) {
     socket.emit('boop', event.target.name);
-    var newBoop = new createjs.Bitmap("boop.png");
+    var newBoop = new createjs.Bitmap(boopImg);
     newBoop.scaleX = 0.3;
     newBoop.scaleY = 0.3;
     stage.addChild(newBoop);
@@ -222,7 +224,7 @@ function gameInit() {
     // Player object
     socket.on('boop', function (otherPlayerObj) {
         // TODO: receive boop indicators
-        var newBoop = new createjs.Bitmap("boop.png");
+        var newBoop = new createjs.Bitmap(boopImg);
         stage.addChild(newBoop);
         newBoop.scaleX = 0.3;
         newBoop.scaleY = 0.3;
