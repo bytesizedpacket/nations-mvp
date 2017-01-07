@@ -1,20 +1,23 @@
-var serverVersion = "0.0.2"; // makes sure client and server are compatible versions
-
 var serverPort = 6969;
 var tickRate = 30; // ticks per second
 
 // init dependencies
+var fs = require('fs');
+var request = require('request');
+var gulp = require('gulp');
 var app = require('express')();
 var server = app.listen(serverPort);
 var socket = require('socket.io');
 var io = socket.listen(server);
 
+var serverVersion = require('./package.json').version; // read version from package.json
+
 // Start server
 server.listen(serverPort);
-console.log("Server running on port " + serverPort);
+console.log("Server version " + serverVersion + " running on port " + serverPort);
 
 // init global variables
-var chatqueue = []; // Unlikely to contain more than a few messages, rendering handled clientside
+var chatQueue = []; // Unlikely to contain more than a few messages, rendering handled clientside
 var players = []; // It is normal for this to have undefined values, please account for this!
 
 // Useful prototypes/helper functions
@@ -62,6 +65,18 @@ app.get('/client-old.js', function (req, res) {
     res.sendFile(__dirname + '/client-old.js');
 });
 
+app.get('/easeljs.js', function (req, res) {
+    if(fs.existsSync(__dirname + "/easeljs.js")){ // is there a local version of the script?
+        console.log("Local easeljs.js is present, serving...");
+        res.sendFile(__dirname + "/easeljs.js");
+    } else {
+        console.log("Local easeljs.js is not present, piping from CDN...");
+        var reply = request("https://code.createjs.com/easeljs-0.8.2.min.js");
+        //req.pipe(reply);
+        reply.pipe(res);
+    }
+});
+
 app.get('/dog.png', function (req, res) {
     res.sendFile(__dirname + '/assets/dog.png');
 });
@@ -87,7 +102,7 @@ io.on('connection', function (socket) {
     // Update all references to a player object with a given player object
     function updatePlayerObject(playerObject){
         for(var pl in players){
-            if(players[pl].id == playerObject.id) players[id] = thisPlayerObject;
+            if(players[pl].id == playerObject.id) players[pl] = thisPlayerObject;
             var arrayUpdateSuccess = true; // keep track of whether the player array was successfully updated
         }
         // Alert the console of any potential issues with player updates
@@ -112,6 +127,13 @@ io.on('connection', function (socket) {
         io.in(socket.id.toString()).emit(requestString, obj);
     }
 
+    // Gets the array ID of a given player object
+    function getPlayerArrayID(playerObject){
+        for(var pl in players){
+            if(players[pl].id == playerObject.id) return pl;
+        }
+    }
+
     // Calculates the distance between two [x, y] coordinate arrays.
     // TODO: distance calc
     function calculateDistance(){
@@ -124,10 +146,14 @@ io.on('connection', function (socket) {
     socket.on('disconnect', function () {
         //recentActions++;
         if (loggedIn) {
+            // get the array ID of this player
+            var thisPlayerArrayID = getPlayerArrayID(thisPlayerObject);
+
             console.log(thisPlayerObject.name + " disconnected.");
+            updatePlayerObject(thisPlayerObject);
             socket.emit('playerDisconnect', thisPlayerObject);
-            delete players[thisPlayerObject]; // set array element to undefined
-            console.log(players);
+
+            players.splice(thisPlayerArrayID, 1); // remove current player
         }
     });
 
@@ -235,9 +261,11 @@ io.on('connection', function (socket) {
 // server loop
 // currently ~30 ticks/sec
 setInterval(function () {
+
     io.emit('updateAllPlayers', players); // TODO: Update players on a per-client basis, filter out irrelevant players
     if(chatQueue != []) {
-        io.emit('updateChat', chatqueue);
-        chatqueue = [];
+        io.emit('updateChat', chatQueue);
+        chatQueue = [];
     }
+
 }, Math.round(1000 / tickRate));

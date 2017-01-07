@@ -1,12 +1,15 @@
 // Work in progress replacement client script
 
+// identifier variables
 var clientVersion = "0.0.2"; // makes sure client and server are compatible versions
 
 // init socket.io
 var socket = io.connect(window.location.host);
 
-// start game loop
+// start game loop, shut up webstorm's bitching
+//noinspection JSUnresolvedVariable,JSUnresolvedFunction
 createjs.Ticker.on("tick", tick);
+//noinspection JSUnresolvedVariable,JSUnresolvedFunction
 createjs.Ticker.setFPS(60);
 
 // Init global variables
@@ -20,12 +23,15 @@ var movementLocked = false; // Is the player allowed to move?
 var loginField = document.getElementById("loginField"); // div tag containing all login elements
 var usernameInput = document.getElementById("usernameInput"); // input box for username
 var deniedReason = document.getElementById("deniedReason"); // div tag that displays reason for denied username
+var gameCanvas = document.getElementById("game"); // game canvas element
 var chatbox = document.getElementById("chatbox"); // Textbox for chat messages
 var chatlog = document.getElementById('chatlog'); // Div which contains chatlog
 // UI
 var chatQueue = []; // queue of messages to display in chat, capped at 10 length
 // Local player
 var localPlayerObj = {name: "", id: "", x: 0, y: 0, version: clientVersion}; // blank player object
+// Other Players
+var otherPlayers = [];
 // Input
 var keys = []; // for input handling
 
@@ -61,6 +67,14 @@ function handleInputDown(event) {
         case 13: // Enter
             if (!gameActive && document.activeElement == usernameInput) { // submit login info
                 attemptLogin();
+            }else{
+                if(document.activeElement != chatbox){ // chatbox is not focused
+                    chatbox.focus();
+                }else{ // chatbox is focused
+                    if (chatbox.value.replaceAll(" ","").value != "") socket.emit('chatMessage', chatbox.value); // send chat message
+                    chatbox.value = "";
+                    chatbox.blur(); // remove focus from chatbox
+                }
             }
             break;
     }
@@ -124,6 +138,8 @@ function gameInit() {
         // TODO: Update all players
         // DESTROY ALL CURRENT OBJECTS AND START AGAIN FROM SCRATCH
         // FUCK EFFICIENCY
+        otherPlayers = [];
+        otherPlayers = playerArray;
     });
 
     // Server reports new chat messages since last update
@@ -163,7 +179,7 @@ function tick(event) {
         var movementDirection = [0, 0];
 
         // movement handling
-        if (!movementLocked) {
+        if (!movementLocked && document.hasFocus()) { // make sure movement is possible & window is focused
             if (keys[65]) {
                 movementDirection[0] -= 1;
             }
@@ -180,8 +196,8 @@ function tick(event) {
 
         // character animation
         // TODO: animate local player
-        nonexistentPlayerVariable.x += unitsPerSecond(event, (movementDirection[0] * 20)); // fix these pls
-        nonexistentPlayerVariable.y += unitsPerSecond(event, (movementDirection[1] * 20));
+        localPlayerObj.x += unitsPerSecond(event, (movementDirection[0] * 20)); // fix these pls
+        localPlayerObj.y += unitsPerSecond(event, (movementDirection[1] * 20));
 
         // Animate boop indicators
         // TODO: Animate boop indicators
