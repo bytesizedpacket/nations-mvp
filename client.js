@@ -35,6 +35,8 @@ var debugInfo = document.getElementById('debugInfo'); // debug info shown to the
 // UI
 var chatQueue = []; // queue of messages to display in chat, capped at 10 length
 var boops = [];
+var dog = new Image();
+dog.src = 'dog.png';
 // Local player
 var localPlayerObj = {name: "", id: "", x: 10, y: 50, version: clientVersion}; // blank player object
 // Other Players
@@ -152,7 +154,7 @@ function gameInit() {
     loginField.innerHTML = "";
 
     // Create local player
-    localPlayerBitmap = new createjs.Bitmap("dog.png");
+    localPlayerBitmap = new createjs.Bitmap(dog);
     stage.addChild(localPlayerBitmap);
     // Create player nameplate
     localPlayerNameplate = new createjs.Text(localPlayerObj.name, "11px Arial", "#000000");
@@ -178,27 +180,25 @@ function gameInit() {
     socket.on('updateAllPlayers', function (playerArray) {
         // DESTROY ALL CURRENT OBJECTS AND START AGAIN FROM SCRATCH
         // FUCK EFFICIENCY
-        if(gameActive) {
-            stage.removeAllChildren();
-            stage.removeAllEventListeners;
-            stage.addChild(localPlayerBitmap);
-            stage.addChild(localPlayerNameplate);
-            for (var boop in boops) stage.addChild(boops[boop]);
-            for (var shit in otherPlayers) otherPlayers.splice(shit, 1);
-            for (var shit in otherPlayersNameplates) otherPlayersNameplates.splice(shit, 1);
-            for (var opl in playerArray) {
-                if (playerArray[opl] != undefined && playerArray[opl] != null && playerArray[opl].id != localPlayerObj.id) {
-                    otherPlayers[opl] = new createjs.Bitmap("dog.png");
-                    otherPlayers[opl].name = playerArray[opl].id;
-                    otherPlayersNameplates[opl] = new createjs.Text(playerArray[opl].name, "11px Arial", "#000000");
-                    stage.addChild(otherPlayers[opl]);
-                    stage.addChild(otherPlayersNameplates[opl]);
-                    otherPlayers[opl].x = playerArray[opl].x;
-                    otherPlayersNameplates[opl].x = playerArray[opl].x - ((otherPlayersNameplates[opl].getBounds().width - otherPlayers[opl].getBounds().width) / 2);
-                    otherPlayers[opl].y = playerArray[opl].y;
-                    otherPlayersNameplates[opl].y = playerArray[opl].y - 15;
-                    otherPlayers[opl].addEventListener("mousedown", sendBoop);
-                }
+        stage.removeAllChildren();
+        stage.removeAllEventListeners;
+        stage.addChild(localPlayerBitmap);
+        stage.addChild(localPlayerNameplate);
+        for(var boop in boops) stage.addChild(boops[boop]);
+        for(var shit in otherPlayers) otherPlayers.splice(shit, 1);
+        for(var shit in otherPlayersNameplates) otherPlayersNameplates.splice(shit, 1);
+        for(var opl in playerArray){
+            if(playerArray[opl] != undefined && playerArray[opl] != null && playerArray[opl].id != localPlayerObj.id) {
+                otherPlayers[opl] = new createjs.Bitmap(dog);
+                otherPlayers[opl].name = playerArray[opl].id;
+                otherPlayersNameplates[opl] = new createjs.Text(playerArray[opl].name, "11px Arial", "#000000");
+                stage.addChild(otherPlayers[opl]);
+                stage.addChild(otherPlayersNameplates[opl]);
+                otherPlayers[opl].x = playerArray[opl].x;
+                otherPlayersNameplates[opl].x = playerArray[opl].x - ((otherPlayersNameplates[opl].getBounds().width - otherPlayers[opl].getBounds().width) / 2);
+                otherPlayers[opl].y = playerArray[opl].y;
+                otherPlayersNameplates[opl].y = playerArray[opl].y - 15;
+                otherPlayers[opl].addEventListener("mousedown", sendBoop);
             }
         }
     });
