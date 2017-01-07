@@ -156,7 +156,7 @@ io.on('connection', function (socket) {
 
             console.log(thisPlayerObject.name + " disconnected.");
             updatePlayerObject(thisPlayerObject);
-            socket.emit('playerDisconnect', thisPlayerObject);
+            io.emit('playerDisconnect', thisPlayerObject);
 
             players.splice(thisPlayerArrayID, 1); // remove current player
         }
@@ -189,6 +189,7 @@ io.on('connection', function (socket) {
                     loggedIn = true;
                     playerInfo.name = fixedName;
                     console.log(socket.id.toString() + ", " + fixedName + " has connected.");
+                    addToChatQueue(fixedName + " has joined the server.");
                     playerInfo.id = socket.id;
                     players.push(playerInfo);
                     thisPlayerObject = playerInfo;
