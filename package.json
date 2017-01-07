@@ -4,7 +4,6 @@
   "description": "Server software for nations game",
   "dependencies": {
     "express": "^4.14.0",
-    "gulp": "^3.9.1",
     "request": "^2.79.0",
     "socket.io": "^1.7.2"
   }
