@@ -215,11 +215,11 @@ io.on('connection', function (socket) {
         var movementInvalid = false;
         if (loggedIn) {
             // check for invalid movement since last update
-            if(Math.abs(playerObject.x - thisPlayerObject.x) > 10 || playerObject.x > mapSize[0] || playerObject.x < 0){
+            if(Math.abs(playerObject.x - thisPlayerObject.x) > 20 || playerObject.x > mapSize[0] || playerObject.x < 0){
                 playerObject.x = thisPlayerObject.x;
                 movementInvalid = true;
             }
-            if(Math.abs(playerObject.y - thisPlayerObject.y) > 10 || playerObject.y > mapSize[1] || playerObject.y < 0){
+            if(Math.abs(playerObject.y - thisPlayerObject.y) > 20 || playerObject.y > mapSize[1] || playerObject.y < 0){
                 playerObject.y = thisPlayerObject.y;
                 movementInvalid = true;
             }
