@@ -176,28 +176,29 @@ function gameInit() {
     // NOTE: THIS WILL  INCLUDE THE CURRENT PLAYER
     // Array of player objects
     socket.on('updateAllPlayers', function (playerArray) {
-        // TODO: Update all players
         // DESTROY ALL CURRENT OBJECTS AND START AGAIN FROM SCRATCH
         // FUCK EFFICIENCY
-        stage.removeAllChildren();
-        stage.removeAllEventListeners;
-        stage.addChild(localPlayerBitmap);
-        stage.addChild(localPlayerNameplate);
-        for(var boop in boops) stage.addChild(boops[boop]);
-        otherPlayers = [];
-        otherPlayersNameplates = [];
-        for(var opl in playerArray){
-            if(playerArray[opl] != undefined && playerArray[opl] != null && playerArray[opl].id != localPlayerObj.id) {
-                otherPlayers[opl] = new createjs.Bitmap("dog.png");
-                otherPlayers[opl].name = playerArray[opl].id;
-                otherPlayersNameplates[opl] = new createjs.Text(playerArray[opl].name, "11px Arial", "#000000");
-                stage.addChild(otherPlayers[opl]);
-                stage.addChild(otherPlayersNameplates[opl]);
-                otherPlayers[opl].x = playerArray[opl].x;
-                otherPlayersNameplates[opl].x = playerArray[opl].x - ((otherPlayersNameplates[opl].getBounds().width - otherPlayers[opl].getBounds().width) / 2);
-                otherPlayers[opl].y = playerArray[opl].y;
-                otherPlayersNameplates[opl].y = playerArray[opl].y - 15;
-                otherPlayers[opl].addEventListener("mousedown", sendBoop);
+        if(gameActive) {
+            stage.removeAllChildren();
+            stage.removeAllEventListeners;
+            stage.addChild(localPlayerBitmap);
+            stage.addChild(localPlayerNameplate);
+            for (var boop in boops) stage.addChild(boops[boop]);
+            for (var shit in otherPlayers) otherPlayers.splice(shit, 1);
+            for (var shit in otherPlayersNameplates) otherPlayersNameplates.splice(shit, 1);
+            for (var opl in playerArray) {
+                if (playerArray[opl] != undefined && playerArray[opl] != null && playerArray[opl].id != localPlayerObj.id) {
+                    otherPlayers[opl] = new createjs.Bitmap("dog.png");
+                    otherPlayers[opl].name = playerArray[opl].id;
+                    otherPlayersNameplates[opl] = new createjs.Text(playerArray[opl].name, "11px Arial", "#000000");
+                    stage.addChild(otherPlayers[opl]);
+                    stage.addChild(otherPlayersNameplates[opl]);
+                    otherPlayers[opl].x = playerArray[opl].x;
+                    otherPlayersNameplates[opl].x = playerArray[opl].x - ((otherPlayersNameplates[opl].getBounds().width - otherPlayers[opl].getBounds().width) / 2);
+                    otherPlayers[opl].y = playerArray[opl].y;
+                    otherPlayersNameplates[opl].y = playerArray[opl].y - 15;
+                    otherPlayers[opl].addEventListener("mousedown", sendBoop);
+                }
             }
         }
     });
