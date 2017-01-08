@@ -1,3 +1,5 @@
+// TODO: fix how the clients can change their ID and fuck up everything
+
 var serverPort = 6969;
 var tickRate = 30; // ticks per second
 
@@ -196,7 +198,7 @@ io.on('connection', function (socket) {
 
                     // accept login
                     sendRequestToPlayer(thisPlayerObject, 'loginAccepted', playerInfo);
-                    console.log(players);
+                    //console.log(players);
                     //io.in(socket.id.toString()).emit('updatePlayer', playerInfo);
                 }
             }

@@ -1,5 +1,3 @@
-// Work in progress replacement client script
-
 // identifier variables
 var clientVersion = "0.0.2"; // makes sure client and server are compatible versions
 var serverPollRate = "2"; // frames per movement update
@@ -75,8 +73,8 @@ function sendPlayerObjToServer(playerObject){
 }
 
 function addToChatQueue(msg){
-    chatQueue.unshift(msg);
-    if(chatQueue.length > 10) chatQueue.length = 10;
+    chatQueue.unshift(msg); // add to beginning
+    if(chatQueue.length > 10) chatQueue.length = 10; // lock length at 10
     updateChatDisplay();
 }
 
@@ -87,8 +85,8 @@ function sendBoop(event) {
     newBoop.scaleX = 0.3;
     newBoop.scaleY = 0.3;
     stage.addChild(newBoop);
-    newBoop.x = event.target.x;
-    newBoop.y = event.target.y;
+    newBoop.x = event.target.x - ((newBoop.getBounds().width * 0.3) - event.target.getBounds().width)/2; // TODO: figure out how to get bounds from this
+    newBoop.y = event.target.y - 5;
     boops.push(newBoop);
 }
 
@@ -146,11 +144,8 @@ socket.on('loginDenied', function (reason) {
 
 // Initialize game before loop starts.
 function gameInit() {
-    // Set any variables needed during gameplay
-    // TODO: finish game/var init
 
     // Create startup UI
-    // TODO: DPI-Aware, touch friendly
     stage = new createjs.Stage("game");
     chatbox.style.visibility = "visible";
     loginField.innerHTML = "";
@@ -168,6 +163,7 @@ function gameInit() {
     socket.on('disconnect', function(){
         gameActive = false;
         debugInfo.innerHTML = "SERVER DISCONNECTED";
+        socket = null;
     });
 
     // Server forcibly updates the player's info
@@ -177,30 +173,31 @@ function gameInit() {
     });
 
     // Server provides an array of players for the client to render
-    // NOTE: THIS WILL  INCLUDE THE CURRENT PLAYER
+    // NOTE: THIS WILL INCLUDE THE CURRENT PLAYER
     // Array of player objects
     socket.on('updateAllPlayers', function (playerArray) {
         // DESTROY ALL CURRENT OBJECTS AND START AGAIN FROM SCRATCH
         // FUCK EFFICIENCY
+        // also jesus this is ugly
         stage.removeAllChildren();
-        stage.removeAllEventListeners;
-        stage.addChild(localPlayerBitmap);
-        stage.addChild(localPlayerNameplate);
-        for(var boop in boops) stage.addChild(boops[boop]);
-        for(var shit in otherPlayers) otherPlayers.splice(shit, 1);
-        for(var shit in otherPlayersNameplates) otherPlayersNameplates.splice(shit, 1);
+        stage.removeAllEventListeners; // because forlooping the array apparently doesn't work
+        stage.addChild(localPlayerBitmap); //
+        stage.addChild(localPlayerNameplate); // re-add the persistent shit, because this is definitely efficient to do every frame
+        for(var boop in boops) stage.addChild(boops[boop]); // these too
+        for(var shit in otherPlayers) otherPlayers.splice(shit, 1); // fuck these guys though
+        for(var shit in otherPlayersNameplates) otherPlayersNameplates.splice(shit, 1); // and fuck their moms ( ͡° ͜ʖ ͡°)
         for(var opl in playerArray){
-            if(playerArray[opl] != undefined && playerArray[opl] != null && playerArray[opl].id != localPlayerObj.id) {
-                otherPlayers[opl] = new createjs.Bitmap(dog);
-                otherPlayers[opl].name = playerArray[opl].id;
-                otherPlayersNameplates[opl] = new createjs.Text(playerArray[opl].name, "11px Arial", "#000000");
-                stage.addChild(otherPlayers[opl]);
-                stage.addChild(otherPlayersNameplates[opl]);
-                otherPlayers[opl].x = playerArray[opl].x;
-                otherPlayersNameplates[opl].x = playerArray[opl].x - ((otherPlayersNameplates[opl].getBounds().width - otherPlayers[opl].getBounds().width) / 2);
-                otherPlayers[opl].y = playerArray[opl].y;
-                otherPlayersNameplates[opl].y = playerArray[opl].y - 15;
-                otherPlayers[opl].addEventListener("mousedown", sendBoop);
+            if(playerArray[opl] != undefined && playerArray[opl] != null && playerArray[opl].id != localPlayerObj.id) { // gotta be triple sure it's not the local player
+                otherPlayers[opl] = new createjs.Bitmap(dog); // everybody gets a dog
+                otherPlayers[opl].name = playerArray[opl].id; // because this is a good way to keep track of IDs I guess
+                otherPlayersNameplates[opl] = new createjs.Text(playerArray[opl].name, "11px Arial", "#000000"); // names are important I think
+                stage.addChild(otherPlayers[opl]); // this entire block of code is fucking garbage jfc
+                stage.addChild(otherPlayersNameplates[opl]); // I feel dirty for writing it
+                otherPlayers[opl].x = playerArray[opl].x; // make sure the subjective representation of a non-local entity at least vaguely corresponds to the objective truth (assuming one actually exists)
+                otherPlayers[opl].y = playerArray[opl].y; // make sure the subjective representation of a non-local entity at least vaguely corresponds to the objective truth (assuming one actually exists)
+                otherPlayersNameplates[opl].x = otherPlayers[opl].x - (otherPlayersNameplates[opl].getBounds().width - otherPlayers[opl].getBounds().width)/2; // I need to make a function for this
+                otherPlayersNameplates[opl].y = playerArray[opl].y - 15; // put it above their heads
+                otherPlayers[opl].addEventListener("mousedown", sendBoop); // so you can boop them
             }
         }
     });
@@ -223,14 +220,14 @@ function gameInit() {
     // Player receives a boop from somebody else
     // Player object
     socket.on('boop', function (otherPlayerObj) {
-        // TODO: receive boop indicators
-        var newBoop = new createjs.Bitmap(boopImg);
+        var newBoop = new createjs.Bitmap(boopImg); // new boop
         stage.addChild(newBoop);
-        newBoop.scaleX = 0.3;
+        newBoop.scaleX = 0.3; // make a decent size
         newBoop.scaleY = 0.3;
-        newBoop.x = localPlayerObj.x;
-        newBoop.y = localPlayerObj.y;
-        boops.push(newBoop);
+        newBoop.x = localPlayerBitmap.x - ((newBoop.getBounds().width * 0.3) - localPlayerBitmap.getBounds().width)/2; // center that shit
+        newBoop.y = localPlayerBitmap.y - 5;
+        boops.push(newBoop); // more array witchcraft
+        addToChatQueue(otherPlayerObj.name + " has booped you!"); // alert the player with a more persistent message
     });
 
     // -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >>
@@ -244,8 +241,6 @@ function tick(event) {
     if (!gameActive) { // pre-init behavior
 
     } else { // gameplay behavior
-
-        // TODO: finish main game loop
 
         // keep track of server polls
         currentPollValue ++;
@@ -285,7 +280,7 @@ function tick(event) {
         // update local player sprite
         localPlayerBitmap.x = localPlayerObj.x;
         localPlayerBitmap.y = localPlayerObj.y;
-        localPlayerNameplate.x = localPlayerBitmap.x - (localPlayerNameplate.getBounds().width - localPlayerBitmap.getBounds().width)/2;
+        localPlayerNameplate.x = localPlayerBitmap.x - (localPlayerNameplate.getBounds().width - localPlayerBitmap.getBounds().width)/2; // center above player
         localPlayerNameplate.y = localPlayerBitmap.y - 15;
 
         // show various debug info to the player
@@ -300,7 +295,7 @@ function tick(event) {
             }
         }
 
-        stage.update(event);
+        stage.update(event); // render the frame
 
     }
 }
