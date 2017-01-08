@@ -1,5 +1,3 @@
-// TODO: fix how the clients can change their ID and fuck up everything
-
 var serverPort = 6969;
 var tickRate = 30; // ticks per second
 
@@ -109,6 +107,7 @@ io.on('connection', function (socket) {
 
     // player-specific local variables
     var thisPlayerObject;
+    var thisPlayerId = "";
     var loggedIn = false;
     socket.join(socket.id);
     //var recentActions = 0; // incrememnted every time an action is performed, reset every second
@@ -193,6 +192,7 @@ io.on('connection', function (socket) {
                     console.log(socket.id.toString() + ", " + fixedName + " has connected.");
                     addToChatQueue(fixedName + " has joined the server.");
                     playerInfo.id = socket.id;
+                    thisPlayerId = socket.id;
                     players.push(playerInfo);
                     thisPlayerObject = playerInfo;
 
@@ -215,6 +215,11 @@ io.on('connection', function (socket) {
     // Arg: player object
     socket.on('updatePlayer', function (playerObject) {
         //recentActions++;
+        if(playerObject.id != thisPlayerId){
+            playerObject.id = thisPlayerId;
+            sendChatMessageToPlayer(thisPlayerObject, "Invalid ID detected! Stop trying to hack the game.");
+            forceUpdatePlayer(playerObject);
+        }
         var movementInvalid = false;
         if (loggedIn) {
             // check for invalid movement since last update
