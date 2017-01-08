@@ -209,24 +209,24 @@ io.on('connection', function (socket) {
                 socket.emit('loginDenied', "Enter a name!");
             }else {
                 socket.emit('loginDenied', "Too long!");
-            }
         }
-    });
+    }
+});
 
-    // Received updated player from client
-    // Arg: player object
-    socket.on('updatePlayer', function (playerObject) {
-        //recentActions++;
-        var movementInvalid = false;
-        if (loggedIn) {
+// Received updated player from client
+// Arg: player object
+socket.on('updatePlayer', function (playerObject) {
+    //recentActions++;
+    var movementInvalid = false;
+    if (loggedIn) {
 
-            // make sure the player isn't being a little shit
-            if(playerObject.id != thisPlayerId || playerObject.name != thisPlayerName){
-                playerObject.id = thisPlayerId;
-                playerObject.name = thisPlayerName;
-                sendChatMessageToPlayer(thisPlayerObject, "Invalid player info detected! Stop trying to hack the game.");
-                forceUpdatePlayer(playerObject);
-            }
+        // make sure the player isn't being a little shit
+        if(playerObject.id != thisPlayerId || playerObject.name != thisPlayerName){
+            playerObject.id = thisPlayerId;
+            playerObject.name = thisPlayerName;
+            sendChatMessageToPlayer(thisPlayerObject, "Invalid player info detected! Stop trying to hack the game.");
+            forceUpdatePlayer(playerObject);
+        }
 
             // check for invalid movement since last update
             if(Math.abs(playerObject.x - thisPlayerObject.x) > 15 || playerObject.x > mapSize[0] || playerObject.x < 0){
