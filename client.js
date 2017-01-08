@@ -147,6 +147,7 @@ function gameInit() {
 
     // Create startup UI
     stage = new createjs.Stage("game");
+    gameCanvas.style = "outline: #000000 solid 1px;";
     chatbox.style.visibility = "visible";
     loginField.innerHTML = "";
 

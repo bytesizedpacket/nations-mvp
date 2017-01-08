@@ -19,7 +19,7 @@ console.log("Server version " + serverVersion + " running on port " + serverPort
 // init global variables
 var chatQueue = []; // Unlikely to contain more than a few messages, rendering handled clientside
 var players = []; // It is normal for this to have undefined values, please account for this!
-var mapSize = [800, 450]; // allowed movement range of the game world
+var mapSize = [1280, 720]; // allowed movement range of the game world
 
 // Useful prototypes/helper functions
 // -- << -- << -- << -- << -- << -- << -- << -- << -- << -- << -- << -- <<
