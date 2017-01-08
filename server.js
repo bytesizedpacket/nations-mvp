@@ -108,6 +108,7 @@ io.on('connection', function (socket) {
     // player-specific local variables
     var thisPlayerObject;
     var thisPlayerId = "";
+    var thisPlayerName = "";
     var loggedIn = false;
     socket.join(socket.id);
     //var recentActions = 0; // incrememnted every time an action is performed, reset every second
@@ -193,6 +194,7 @@ io.on('connection', function (socket) {
                     addToChatQueue(fixedName + " has joined the server.");
                     playerInfo.id = socket.id;
                     thisPlayerId = socket.id;
+                    thisPlayerName = fixedName;
                     players.push(playerInfo);
                     thisPlayerObject = playerInfo;
 
@@ -215,13 +217,17 @@ io.on('connection', function (socket) {
     // Arg: player object
     socket.on('updatePlayer', function (playerObject) {
         //recentActions++;
-        if(playerObject.id != thisPlayerId){
-            playerObject.id = thisPlayerId;
-            sendChatMessageToPlayer(thisPlayerObject, "Invalid ID detected! Stop trying to hack the game.");
-            forceUpdatePlayer(playerObject);
-        }
         var movementInvalid = false;
         if (loggedIn) {
+
+            // make sure the player isn't being a little shit
+            if(playerObject.id != thisPlayerId || playerObject.name != thisPlayerName){
+                playerObject.id = thisPlayerId;
+                playerObject.name = thisPlayerName;
+                sendChatMessageToPlayer(thisPlayerObject, "Invalid player info detected! Stop trying to hack the game.");
+                forceUpdatePlayer(playerObject);
+            }
+
             // check for invalid movement since last update
             if(Math.abs(playerObject.x - thisPlayerObject.x) > 15 || playerObject.x > mapSize[0] || playerObject.x < 0){
                 playerObject.x = thisPlayerObject.x;
@@ -236,6 +242,7 @@ io.on('connection', function (socket) {
                 forceUpdatePlayer(playerObject);
             }
             updatePlayerObject(playerObject);
+
         }
     });
 
