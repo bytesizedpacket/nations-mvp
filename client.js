@@ -285,7 +285,7 @@ function tick(event) {
         localPlayerNameplate.y = localPlayerBitmap.y - 15;
 
         // show various debug info to the player
-        debugInfo.innerHTML = localPlayerObj.name + "<br/>X: " + localPlayerObj.x + "<br/>Y: " + localPlayerObj.y;
+        debugInfo.innerHTML = localPlayerObj.name + "<br/>X: " + localPlayerObj.x.toString().substring(0, 8) + "<br/>Y: " + localPlayerObj.y.toString().substring(0, 8);
 
         // Animate boop indicators
         for(var boop in boops){
