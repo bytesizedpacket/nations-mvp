@@ -199,16 +199,16 @@ io.on('connection', function (socket) {
                     thisPlayerObject = playerInfo;
 
                     // accept login
-                    sendRequestToPlayer(thisPlayerObject, 'loginAccepted', playerInfo);
+                    socket.emit('loginAccepted', playerInfo);
                     //console.log(players);
                     //io.in(socket.id.toString()).emit('updatePlayer', playerInfo);
                 }
             }
         } else {
             if(fixedName == ""){
-                sendRequestToPlayer(thisPlayerObject, 'loginDenied', "Enter a name!");
+                socket.emit('loginDenied', "Enter a name!");
             }else {
-                sendRequestToPlayer(thisPlayerObject, 'loginDenied', "Too long!");
+                socket.emit('loginDenied', "Too long!");
             }
         }
     });
