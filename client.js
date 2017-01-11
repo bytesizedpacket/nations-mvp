@@ -1,6 +1,7 @@
 // identifier variables
 var clientVersion = "0.0.2"; // makes sure client and server are compatible versions
 var serverPollRate = "2"; // frames per movement update
+var clientResolution = [1280, 720]; // Resolution in pixels of the game's screen
 
 // init socket.io
 var socket = io.connect(window.location.host);
@@ -13,7 +14,7 @@ createjs.Ticker.setFPS(60);
 
 // Init global variables
 // Undefined at game start
-var stage, localPlayerBitmap, localPlayerNameplate;
+var stage, localPlayerBitmap, localPlayerNameplate, borderRect;
 // game state booleans
 var loggedIn = false; // Is the player successfully logged in?
 var gameActive = false; // Is the game running?
@@ -27,6 +28,8 @@ var usernameInput = document.getElementById("usernameInput"); // input box for u
 usernameInput.focus(); // focus the username box
 var deniedReason = document.getElementById("deniedReason"); // div tag that displays reason for denied username
 var gameCanvas = document.getElementById("game"); // game canvas element
+gameCanvas.width = clientResolution[0]; // set resolution
+gameCanvas.height = clientResolution[1];
 var chatbox = document.getElementById("chatbox"); // Textbox for chat messages
 var chatlog = document.getElementById('chatlog'); // Div which contains chatlog
 var debugInfo = document.getElementById('debugInfo'); // debug info shown to the player
@@ -62,19 +65,19 @@ function unitsPerSecond(event, units) {
 // Updates the displayed chatlog with current contents of chatQueue array
 function updateChatDisplay() {
     chatlog.innerHTML = "";
-    for(var msg in chatQueue){
+    for (var msg in chatQueue) {
         chatlog.innerHTML += chatQueue[msg] + "<br/>";
     }
 }
 
 // Send updated player object to the server
-function sendPlayerObjToServer(playerObject){
+function sendPlayerObjToServer(playerObject) {
     socket.emit('updatePlayer', playerObject);
 }
 
-function addToChatQueue(msg){
+function addToChatQueue(msg) {
     chatQueue.unshift(msg); // add to beginning
-    if(chatQueue.length > 10) chatQueue.length = 10; // lock length at 10
+    if (chatQueue.length > 10) chatQueue.length = 10; // lock length at 10
     updateChatDisplay();
 }
 
@@ -85,9 +88,19 @@ function sendBoop(event) {
     newBoop.scaleX = 0.3;
     newBoop.scaleY = 0.3;
     stage.addChild(newBoop);
-    newBoop.x = event.target.x - ((newBoop.getBounds().width * 0.3) - event.target.getBounds().width)/2; // TODO: figure out how to get bounds from this
+    newBoop.x = event.target.x - ((newBoop.getBounds().width * 0.3) - event.target.getBounds().width) / 2; // TODO: figure out how to get bounds from this
     newBoop.y = event.target.y - 5;
     boops.push(newBoop);
+}
+
+// Returns screen coordinates based on the given world coordinates
+// Pass an [X, Y] array!
+function convertWorldToScreen(coords) {
+    var tempCoordX = coords[0] - localPlayerObj.x;
+    var tempCoordY = coords[1] - localPlayerObj.y;
+    var screenMiddleX = clientResolution[0] / 2;
+    var screenMiddleY = clientResolution[1] / 2;
+    return [screenMiddleX + tempCoordX, screenMiddleY + tempCoordY];
 }
 
 // -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >>
@@ -103,11 +116,11 @@ function handleInputDown(event) {
         case 13: // Enter
             if (!gameActive && document.activeElement == usernameInput) { // submit login info
                 attemptLogin();
-            }else{
-                if(document.activeElement != chatbox){ // chatbox is not focused
+            } else {
+                if (document.activeElement != chatbox) { // chatbox is not focused
                     chatbox.focus();
-                }else{ // chatbox is focused
-                    if (chatbox.value.replaceAll(" ","") != "") socket.emit('chatMessage', chatbox.value); // send chat message
+                } else { // chatbox is focused
+                    if (chatbox.value.replaceAll(" ", "") != "") socket.emit('chatMessage', chatbox.value); // send chat message
                     chatbox.value = "";
                     chatbox.blur(); // remove focus from chatbox
                 }
@@ -161,7 +174,7 @@ function gameInit() {
     // Socket listeners
     // -- << -- << -- << -- << -- << -- << -- << -- << -- << -- << -- << -- <<
 
-    socket.on('disconnect', function(){
+    socket.on('disconnect', function () {
         gameActive = false;
         debugInfo.innerHTML = "SERVER DISCONNECTED";
         socket = null;
@@ -184,20 +197,21 @@ function gameInit() {
         stage.removeAllEventListeners; // because forlooping the array apparently doesn't work
         stage.addChild(localPlayerBitmap); //
         stage.addChild(localPlayerNameplate); // re-add the persistent shit, because this is definitely efficient to do every frame
-        for(var boop in boops) stage.addChild(boops[boop]); // these too
-        for(var shit in otherPlayers) otherPlayers.splice(shit, 1); // fuck these guys though
-        for(var shit in otherPlayersNameplates) otherPlayersNameplates.splice(shit, 1); // and fuck their moms ( ͡° ͜ʖ ͡°)
-        for(var opl in playerArray){
-            if(playerArray[opl] != undefined && playerArray[opl] != null && playerArray[opl].id != localPlayerObj.id) { // gotta be triple sure it's not the local player
+        for (var boop in boops) stage.addChild(boops[boop]); // these too
+        for (var shit in otherPlayers) otherPlayers.splice(shit, 1); // fuck these guys though
+        for (var shit in otherPlayersNameplates) otherPlayersNameplates.splice(shit, 1); // and fuck their moms ( ͡° ͜ʖ ͡°)
+        for (var opl in playerArray) {
+            if (playerArray[opl] != undefined && playerArray[opl] != null && playerArray[opl].id != localPlayerObj.id) { // gotta be triple sure it's not the local player
                 otherPlayers[opl] = new createjs.Bitmap(dog); // everybody gets a dog
                 otherPlayers[opl].name = playerArray[opl].id; // because this is a good way to keep track of IDs I guess
                 otherPlayersNameplates[opl] = new createjs.Text(playerArray[opl].name, "11px Arial", "#000000"); // names are important I think
                 stage.addChild(otherPlayers[opl]); // this entire block of code is fucking garbage jfc
                 stage.addChild(otherPlayersNameplates[opl]); // I feel dirty for writing it
-                otherPlayers[opl].x = playerArray[opl].x; // make sure the subjective representation of a non-local entity at least vaguely corresponds to the objective truth (assuming one actually exists)
-                otherPlayers[opl].y = playerArray[opl].y; // make sure the subjective representation of a non-local entity at least vaguely corresponds to the objective truth (assuming one actually exists)
-                otherPlayersNameplates[opl].x = otherPlayers[opl].x - (otherPlayersNameplates[opl].getBounds().width - otherPlayers[opl].getBounds().width)/2; // I need to make a function for this
-                otherPlayersNameplates[opl].y = playerArray[opl].y - 15; // put it above their heads
+                var screenPosition = convertWorldToScreen([playerArray[opl].x - (otherPlayers[opl].getBounds().width / 2), playerArray[opl].y - (otherPlayers[opl].getBounds().height / 2)]);
+                otherPlayers[opl].x = screenPosition[0]; // make sure the subjective representation of a non-local entity at least vaguely corresponds to the objective truth (assuming one actually exists)
+                otherPlayers[opl].y = screenPosition[1]; // make sure the subjective representation of a non-local entity at least vaguely corresponds to the objective truth (assuming one actually exists)
+                otherPlayersNameplates[opl].x = otherPlayers[opl].x - (otherPlayersNameplates[opl].getBounds().width - otherPlayers[opl].getBounds().width) / 2; // I need to make a function for this
+                otherPlayersNameplates[opl].y = otherPlayers[opl].y - 15; // put it above their heads
                 otherPlayers[opl].addEventListener("mousedown", sendBoop); // so you can boop them
             }
         }
@@ -206,7 +220,7 @@ function gameInit() {
     // Server reports new chat messages since last update
     // Array of strings
     socket.on('updateChat', function (msgArray) {
-        for(var msg in msgArray){
+        for (var msg in msgArray) {
             addToChatQueue(msgArray[msg]);
         }
     });
@@ -225,7 +239,7 @@ function gameInit() {
         stage.addChild(newBoop);
         newBoop.scaleX = 0.3; // make a decent size
         newBoop.scaleY = 0.3;
-        newBoop.x = localPlayerBitmap.x - ((newBoop.getBounds().width * 0.3) - localPlayerBitmap.getBounds().width)/2; // center that shit
+        newBoop.x = localPlayerBitmap.x - ((newBoop.getBounds().width * 0.3) - localPlayerBitmap.getBounds().width) / 2; // center that shit
         newBoop.y = localPlayerBitmap.y - 5;
         boops.push(newBoop); // more array witchcraft
         addToChatQueue(otherPlayerObj.name + " has booped you!"); // alert the player with a more persistent message
@@ -243,12 +257,23 @@ function tick(event) {
 
     } else { // gameplay behavior
 
+        // draw world border rect
+        stage.removeChild(borderRect);
+        var rectPos = convertWorldToScreen([0, 0]);
+        borderRect = new createjs.Shape();
+        borderRect.graphics.beginStroke("gray");
+        borderRect.graphics.drawRect(0, 0, 1280, 720);
+        borderRect.graphics.endStroke();
+        borderRect.x = rectPos[0];
+        borderRect.y = rectPos[1];
+        stage.addChild(borderRect);
+
         // keep track of server polls
-        currentPollValue ++;
-        if(currentPollValue > serverPollRate){
+        currentPollValue++;
+        if (currentPollValue > serverPollRate) {
             currentPollValue = 0;
             sendMovementPolls = true;
-        }else{
+        } else {
             sendMovementPolls = false;
         }
 
@@ -272,25 +297,25 @@ function tick(event) {
         }
 
         // character movement
-        if(movementDirection[0] != 0 || movementDirection[1] != 0) {
+        if (movementDirection[0] != 0 || movementDirection[1] != 0) {
             localPlayerObj.x += unitsPerSecond(event, (movementDirection[0] * movementSpeed));
             localPlayerObj.y += unitsPerSecond(event, (movementDirection[1] * movementSpeed));
-            if(sendMovementPolls) sendPlayerObjToServer(localPlayerObj);
+            if (sendMovementPolls) sendPlayerObjToServer(localPlayerObj);
         }
 
         // update local player sprite
-        localPlayerBitmap.x = localPlayerObj.x;
-        localPlayerBitmap.y = localPlayerObj.y;
-        localPlayerNameplate.x = localPlayerBitmap.x - (localPlayerNameplate.getBounds().width - localPlayerBitmap.getBounds().width)/2; // center above player
+        localPlayerBitmap.x = (clientResolution[0] / 2) - (localPlayerBitmap.getBounds().width / 2);
+        localPlayerBitmap.y = (clientResolution[1] / 2) - (localPlayerBitmap.getBounds().height / 2);
+        localPlayerNameplate.x = localPlayerBitmap.x - (localPlayerNameplate.getBounds().width - localPlayerBitmap.getBounds().width) / 2; // center above player
         localPlayerNameplate.y = localPlayerBitmap.y - 15;
 
         // show various debug info to the player
         debugInfo.innerHTML = localPlayerObj.name + "<br/>X: " + localPlayerObj.x.toString().substring(0, 8) + "<br/>Y: " + localPlayerObj.y.toString().substring(0, 8);
 
         // Animate boop indicators
-        for(var boop in boops){
+        for (var boop in boops) {
             boops[boop].alpha -= 0.05;
-            if(boops[boop].alpha < 0){
+            if (boops[boop].alpha < 0) {
                 stage.removeChild(boops[boop]);
                 boops.splice(boop, 1);
             }
