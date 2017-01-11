@@ -1,3 +1,5 @@
 .idea/
 node_modules/
 easeljs.js
+client-old.js
+oldclient.html
