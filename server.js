@@ -259,13 +259,13 @@ socket.on('updatePlayer', function (playerObject) {
         }
 
             // check for invalid movement since last update
-            if(Math.abs(playerObject.x - thisPlayerObject.x) > 15 || playerObject.x > mapSize[0] || playerObject.x < 0){
+            if(Math.abs(playerObject.x - thisPlayerObject.x) > 15 || playerObject.x > 1536 - 24 || playerObject.x < 24){
                 playerObject.x = thisPlayerObject.x;
-                //movementInvalid = true;
+                movementInvalid = true;
             }
-            if(Math.abs(playerObject.y - thisPlayerObject.y) > 15 || playerObject.y > mapSize[1] || playerObject.y < 0){
+            if(Math.abs(playerObject.y - thisPlayerObject.y) > 15 || playerObject.y > 1536 - 24 || playerObject.y < 24){
                 playerObject.y = thisPlayerObject.y;
-                //movementInvalid = true;
+                movementInvalid = true;
             }
             if(movementInvalid){
                 sendChatMessageToPlayer(thisPlayerObject, "Invalid movement!");

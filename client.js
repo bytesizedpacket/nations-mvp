@@ -1,5 +1,5 @@
 // identifier variables
-var clientVersion = "0.0.2"; // makes sure client and server are compatible versions
+var clientVersion = "0.0.3"; // makes sure client and server are compatible versions
 var serverPollRate = "2"; // frames per movement update
 var clientResolution = [1280, 720]; // Resolution in pixels of the game's screen
 
