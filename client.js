@@ -14,7 +14,7 @@ createjs.Ticker.setFPS(60);
 
 // Init global variables
 // Undefined at game start
-var stage, localPlayerBitmap, localPlayerNameplate, borderRect;
+var stage, localPlayerBitmap, localPlayerNameplate, borderRect, visibleChunks, visibleTiles;
 // game state booleans
 var loggedIn = false; // Is the player successfully logged in?
 var gameActive = false; // Is the game running?
@@ -40,8 +40,12 @@ var dog = new Image();
 dog.src = 'dog.png';
 var boopImg = new Image();
 boopImg.src = 'boop.png';
+var grassImg = new Image();
+grassImg.src = 'grass.png';
+var stoneImg = new Image();
+stoneImg.src = 'stone.png';
 // Local player
-var localPlayerObj = {name: "", id: "", x: 10, y: 50, version: clientVersion}; // blank player object
+var localPlayerObj = {name: "", id: "", x: 96, y: 96, version: clientVersion}; // blank player object
 // Other Players
 var otherPlayers = [];
 var otherPlayersNameplates = [];
@@ -189,12 +193,36 @@ function gameInit() {
     // Server provides an array of players for the client to render
     // NOTE: THIS WILL INCLUDE THE CURRENT PLAYER
     // Array of player objects
-    socket.on('updateAllPlayers', function (playerArray) {
+    socket.on('updateWorld', function (worldUpdate) {
         // DESTROY ALL CURRENT OBJECTS AND START AGAIN FROM SCRATCH
         // FUCK EFFICIENCY
         // also jesus this is ugly
+        var playerArray = worldUpdate[0]
+        var chunkObjArray = worldUpdate[1];
         stage.removeAllChildren();
         stage.removeAllEventListeners; // because forlooping the array apparently doesn't work
+
+        visibleTiles = [];
+        visibleChunks = chunkObjArray;
+        for(var chunkObj in visibleChunks){
+            for(var x in visibleChunks[chunkObj].chunk) {
+                for (var y in visibleChunks[chunkObj].chunk[x]) {
+                    var tile = visibleChunks[chunkObj].chunk[x][y];
+                    if(tile.type == "grass"){
+                        visibleTiles.push(new createjs.Bitmap(grassImg));
+                    }else if(tile.type == "stone"){
+                        visibleTiles.push(new createjs.Bitmap(stoneImg));
+                    }
+
+                    var tileImg = visibleTiles[visibleTiles.length - 1];
+                    stage.addChild(tileImg);
+                    var tilePos = convertWorldToScreen([visibleChunks[chunkObj].x + (x * 48),visibleChunks[chunkObj].y + (y * 48)])
+                    tileImg.x = tilePos[0];
+                    tileImg.y = tilePos[1];
+                }
+            }
+        }
+
         stage.addChild(localPlayerBitmap); //
         stage.addChild(localPlayerNameplate); // re-add the persistent shit, because this is definitely efficient to do every frame
         for (var boop in boops) stage.addChild(boops[boop]); // these too
@@ -257,17 +285,6 @@ function tick(event) {
 
     } else { // gameplay behavior
 
-        // draw world border rect
-        stage.removeChild(borderRect);
-        var rectPos = convertWorldToScreen([0, 0]);
-        borderRect = new createjs.Shape();
-        borderRect.graphics.beginStroke("gray");
-        borderRect.graphics.drawRect(0, 0, 1280, 720);
-        borderRect.graphics.endStroke();
-        borderRect.x = rectPos[0];
-        borderRect.y = rectPos[1];
-        stage.addChild(borderRect);
-
         // keep track of server polls
         currentPollValue++;
         if (currentPollValue > serverPollRate) {
@@ -298,9 +315,28 @@ function tick(event) {
 
         // character movement
         if (movementDirection[0] != 0 || movementDirection[1] != 0) {
-            localPlayerObj.x += unitsPerSecond(event, (movementDirection[0] * movementSpeed));
-            localPlayerObj.y += unitsPerSecond(event, (movementDirection[1] * movementSpeed));
-            if (sendMovementPolls) sendPlayerObjToServer(localPlayerObj);
+            var movementValid = true;
+            for(var chunkObj in visibleChunks){
+                for(var x in visibleChunks[chunkObj].chunk) {
+                    for (var y in visibleChunks[chunkObj].chunk[x]) {
+                        var tile = visibleChunks[chunkObj].chunk[x][y];
+                        if(tile.collides){
+                            var futurePosX = localPlayerObj.x + unitsPerSecond(event, (movementDirection[0] * movementSpeed));
+                            var futurePosY = localPlayerObj.y + unitsPerSecond(event, (movementDirection[1] * movementSpeed));
+                            var negativeZoneX = [visibleChunks[chunkObj].x + (x * 48), (visibleChunks[chunkObj].x + (x * 48)) + 48];
+                            var negativeZoneY = [visibleChunks[chunkObj].y + (y * 48), (visibleChunks[chunkObj].y + (y * 48)) + 48];
+                            if(futurePosX > negativeZoneX[0] && futurePosX < negativeZoneX[1] && futurePosY > negativeZoneY[0] && futurePosY < negativeZoneY[1]){
+                                movementValid = false;
+                            }
+                        }
+                    }
+                }
+            }
+            if(movementValid) {
+                localPlayerObj.x += unitsPerSecond(event, (movementDirection[0] * movementSpeed));
+                localPlayerObj.y += unitsPerSecond(event, (movementDirection[1] * movementSpeed));
+                if (sendMovementPolls) sendPlayerObjToServer(localPlayerObj);
+            }
         }
 
         // update local player sprite

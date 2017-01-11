@@ -21,6 +21,27 @@ var chatQueue = []; // Unlikely to contain more than a few messages, rendering h
 var players = []; // It is normal for this to have undefined values, please account for this!
 var mapSize = [1280, 720]; // allowed movement range of the game world
 
+// init world
+// TODO: file i/o for world
+var temporaryShitTile = {type: "grass", collides: false};
+var temporaryShitTile2 = {type: "stone", collides: true};
+var temporaryShitChunk = [
+    [temporaryShitTile,temporaryShitTile,temporaryShitTile,temporaryShitTile,temporaryShitTile,temporaryShitTile,temporaryShitTile,temporaryShitTile],
+    [temporaryShitTile,temporaryShitTile,temporaryShitTile,temporaryShitTile,temporaryShitTile,temporaryShitTile,temporaryShitTile,temporaryShitTile],
+    [temporaryShitTile,temporaryShitTile,temporaryShitTile,temporaryShitTile,temporaryShitTile,temporaryShitTile,temporaryShitTile,temporaryShitTile],
+    [temporaryShitTile,temporaryShitTile,temporaryShitTile,temporaryShitTile2,temporaryShitTile2,temporaryShitTile,temporaryShitTile,temporaryShitTile],
+    [temporaryShitTile,temporaryShitTile,temporaryShitTile,temporaryShitTile2,temporaryShitTile2,temporaryShitTile,temporaryShitTile,temporaryShitTile],
+    [temporaryShitTile,temporaryShitTile,temporaryShitTile,temporaryShitTile,temporaryShitTile,temporaryShitTile,temporaryShitTile,temporaryShitTile],
+    [temporaryShitTile,temporaryShitTile,temporaryShitTile,temporaryShitTile,temporaryShitTile,temporaryShitTile,temporaryShitTile,temporaryShitTile],
+    [temporaryShitTile,temporaryShitTile,temporaryShitTile,temporaryShitTile,temporaryShitTile,temporaryShitTile,temporaryShitTile,temporaryShitTile]
+];
+var world = [
+    [temporaryShitChunk,temporaryShitChunk,temporaryShitChunk,temporaryShitChunk],
+    [temporaryShitChunk,temporaryShitChunk,temporaryShitChunk,temporaryShitChunk],
+    [temporaryShitChunk,temporaryShitChunk,temporaryShitChunk,temporaryShitChunk],
+    [temporaryShitChunk,temporaryShitChunk,temporaryShitChunk,temporaryShitChunk]
+];
+
 // Useful prototypes/helper functions
 // -- << -- << -- << -- << -- << -- << -- << -- << -- << -- << -- << -- <<
 
@@ -99,6 +120,15 @@ app.get('/dog.png', function (req, res) {
 app.get('/boop.png', function (req, res) {
     res.sendFile(__dirname + '/assets/boop.png');
 });
+
+app.get('/grass.png', function (req, res) {
+    res.sendFile(__dirname + '/assets/grass.png');
+});
+
+app.get('/stone.png', function (req, res) {
+    res.sendFile(__dirname + '/assets/stone.png');
+});
+
 // -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >> -- >>
 
 // Player has loaded the webpage
@@ -231,11 +261,11 @@ socket.on('updatePlayer', function (playerObject) {
             // check for invalid movement since last update
             if(Math.abs(playerObject.x - thisPlayerObject.x) > 15 || playerObject.x > mapSize[0] || playerObject.x < 0){
                 playerObject.x = thisPlayerObject.x;
-                movementInvalid = true;
+                //movementInvalid = true;
             }
             if(Math.abs(playerObject.y - thisPlayerObject.y) > 15 || playerObject.y > mapSize[1] || playerObject.y < 0){
                 playerObject.y = thisPlayerObject.y;
-                movementInvalid = true;
+                //movementInvalid = true;
             }
             if(movementInvalid){
                 sendChatMessageToPlayer(thisPlayerObject, "Invalid movement!");
@@ -285,12 +315,23 @@ socket.on('updatePlayer', function (playerObject) {
 // currently ~30 ticks/sec
 setInterval(function () {
 
-    // update players for each client
-    io.emit('updateAllPlayers', players);
-
     if(chatQueue != []) { // make sure chatlog isn't empty
         io.emit('updateChat', chatQueue);
         chatQueue = [];
+    }
+
+    // update world for each player
+    for(var pl in players){
+        var pos = [players[pl].x, players[pl].y];
+        var chunks = []
+        for(var x in world){
+            for(var y in world[x]){
+                if(Math.abs(x * 48 * 8 - (pos[0])) <= 2000 || Math.abs(y * 48 * 8 - (pos[1])) <= 1000){
+                    chunks.push({x: x * 48 * 8, y: y * 48 * 8, chunk: world[x][y]});
+                }
+            }
+        }
+        sendRequestToPlayer(players[pl], 'updateWorld', [players, chunks]);
     }
 
 }, Math.round(1000 / tickRate));
